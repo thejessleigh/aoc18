@@ -2,24 +2,9 @@ import datetime
 import re
 
 def guard_watch(schedule):
-    guards = {}
-    guard_pattern = re.compile(r'^.*#(?P<guard_id>\d*)')
-    minute_pattern = re.compile(r'^.*:(?P<minute>\d{2})\]')
-    current_guard = []
     current_leader = None
     max_global_frequency = 0
-    entries = sort_log(schedule)
-    for entry in entries:
-        if "begins shift" in entry:
-            guards = tally_shift(current_guard, guards)
-            current_guard = []
-            current_guard.append(guard_pattern.search(entry).group('guard_id'))
-        elif "falls asleep" in entry:
-            current_guard.append(minute_pattern.search(entry).group('minute'))
-        else:
-            current_guard.append(minute_pattern.search(entry).group('minute'))
-    guards = tally_shift(current_guard, guards)
-    for k, v in guards.items():
+    for k, v in process_shifts(schedule).items():
         max_freq = max(v.values())
         if max_freq >= max_global_frequency:
             max_global_frequency = max_freq
@@ -48,5 +33,22 @@ def tally_shift(current_guard, guards):
             guard[m] += 1
     return guards
 
+def process_shifts(entries):
+    guard_pattern = re.compile(r'^.*#(?P<guard_id>\d*)')
+    minute_pattern = re.compile(r'^.*:(?P<minute>\d{2})\]')
+    guards = {}
+    current_guard = []
+    entries = sort_log(entries)
+    for entry in entries:
+        if "begins shift" in entry:
+            guards = tally_shift(current_guard, guards)
+            current_guard = []
+            current_guard.append(guard_pattern.search(entry).group('guard_id'))
+        elif "falls asleep" in entry:
+            current_guard.append(minute_pattern.search(entry).group('minute'))
+        else:
+            current_guard.append(minute_pattern.search(entry).group('minute'))
+    return tally_shift(current_guard, guards)
 
-print(guard_watch(open('input.txt', 'r')))
+
+print(guard_watch(open('test_input.txt', 'r')))
